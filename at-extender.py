@@ -354,11 +354,6 @@ def get_smart_interval():
         return 60  # Fallback
 
 
-def fehlerFunktion():
-    sendMessage("error", f"{RUFNUMMER}: ❌ Fehler beim Abrufen des Datenvolumens. Bitte manuell prüfen.")
-    sendMessage("warn", f"{RUFNUMMER}: ❗️ Fehler beim Abrufen des Datenvolumens. Bitte manuell prüfen.")
-    sendMessage("info", f"{RUFNUMMER}: ❗️ Fehler beim Abrufen des Datenvolumens. Bitte manuell prüfen.")
-
 def get_interval(config):
     mode = config.get("SLEEP_MODE", "random")
     if mode == "smart":
@@ -386,7 +381,6 @@ def get_interval(config):
 if __name__ == "__main__":
     while True:
         check_for_update()
-        fehlerFunktion()
         logging.info("Starte neuen Durchlauf...")
         interval = login_and_check_data()
         logging.info(f"💤 Warte {interval} Sekunden...")
