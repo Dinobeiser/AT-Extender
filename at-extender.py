@@ -75,7 +75,7 @@ except Exception as e:
 
 def sendMessage(type, message):
     if TELEGRAM == "1":
-        if type == "info" and INFO_LEVEL >= 1 and INFO_LEVEL != 3 and INFO_LEVEL != 2:
+        if type == "info" and INFO_LEVEL == 1 and INFO_LEVEL != 3 and INFO_LEVEL != 2:
             send_telegram_message(message)
         elif type == "warn" and INFO_LEVEL >= 1 and INFO_LEVEL != 3:
             send_telegram_message(message)
