@@ -93,8 +93,8 @@ Erstelle eine Datei namens `config.json` im gleichen Verzeichnis wie das Skript 
 ```
 
 ### Felder erklärt:
-| Schlüssel        | Beschreibung                                                                 |
-|------------------|------------------------------------------------------------------------------|
+| Schlüssel        | Beschreibung                                                                 | Hinweis |
+|------------------|------------------------------------------------------------------------------|---|
 | `RUFNUMMER`       | Deine ALDI TALK Nummer (mit 0 am Anfang)                                    |
 | `PASSWORT`        | Dein Kundenportal-Passwort                                                  |
 | `BOT_TOKEN`       | Telegram-Bot-Token von [@BotFather](https://t.me/BotFather)                 |
@@ -103,8 +103,8 @@ Erstelle eine Datei namens `config.json` im gleichen Verzeichnis wie das Skript 
 | `TELEGRAM`        | `1` für Telegram-Nachrichten, `0` für deaktivieren                          |
 | `SLEEP_MODE`      | Steuert, wie lange das Skript nach jedem Durchlauf pausiert: <br><br> `"random"` - Zufälliges Intervall zwischen ca. 5-8 Minuten. <br> `"fixed"` - Nutzt das feste Intervall aus `SLEEP_INTERVAL` in Sekunden. <br> `"smart"` - Dynamisch an das verbleibende Datenvolumen angepasst
 | `SLEEP_INTERVAL`  | Intervall in Sekunden (nur relevant bei `"fixed"`), **min. 70 Sekunden**    |
-| `BROWSER`         | `"chromium"` (Standard) oder `"firefox"`                                    |
-| Hinweis: Manche Server-configs funktionieren stabiler mit "firefox" - ideal für schwächere Instanzen oder wenn input-6/help-text nicht geladen werden. |
+| `BROWSER`         | `"chromium"` (Standard) oder `"firefox"` | Hinweis: Manche Server-configs funktionieren stabiler mit "firefox" - ideal für schwächere Instanzen oder wenn input-6/help-text nicht geladen werden. |
+| `INFO_LEVEL`| `"0"` (Standart) oder `"1"` (Alle Benachrichtigungen), `"2"` (Nur Warnungen und Fehler), `"3"` (Nur Fehlermeldungen)|
 
 ---
 

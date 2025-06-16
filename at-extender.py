@@ -53,6 +53,7 @@ TELEGRAM = config["TELEGRAM"]
 SLEEP_MODE = config["SLEEP_MODE"]
 SLEEP_INTERVAL = config["SLEEP_INTERVAL"]
 BROWSER = config["BROWSER"]
+INFO_LEVEL = int(config["INFO_LEVEL"])
 
 TELEGRAM_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 
@@ -72,7 +73,17 @@ except Exception as e:
     except Exception as save_error:
         logging.error(f"Konnte 'state.json' nicht neu erstellen: {save_error}")
 
-
+def sendMessage(type, message):
+    if TELEGRAM == "1":
+        if type == "info" and INFO_LEVEL >= 1 and INFO_LEVEL != 3 and INFO_LEVEL != 2:
+            send_telegram_message(message)
+        elif type == "warn" and INFO_LEVEL >= 1 and INFO_LEVEL != 3:
+            send_telegram_message(message)
+        elif type == "error" and INFO_LEVEL >= 1:
+            send_telegram_message(message)
+        elif type != "info" and type != "warn" and type != "error":
+            logging.error(f"Unbekannter Typ '{type}' oder INFO_LEVEL zu niedrig: {message}")
+            send_telegram_message(f"Unbekannter Typ '{type}' oder INFO_LEVEL zu niedrig: {message}")
 
 def send_telegram_message(message, retries=3):
     if TELEGRAM == "1":
@@ -305,20 +316,18 @@ def login_and_check_data():
                     else:
                         raise Exception("❌ Konnte den Nachbuchungsbutton nicht klicken!")
 
-                    send_telegram_message(message)
+                    sendMessage("info", message)
 
                 else:
                     interval = get_interval(config)
-                    send_telegram_message(f"{RUFNUMMER}: Noch {LAST_GB:.2f} GB übrig. Nächster Run in {interval} Sekunden. ✅")
+                    sendMessage("info",f"{RUFNUMMER}: Noch {LAST_GB:.2f} GB übrig. Nächster Run in {interval} Sekunden. ✅")
                     return interval
-
-
 
                 return  # Erfolgreicher Durchlauf, keine Wiederholung nötig
 
             except Exception as e:
                 logging.error(f"Fehler im Versuch {attempt+1}: {e}")
-                send_telegram_message(f"{RUFNUMMER}: ❌ Fehler beim Abrufen des Datenvolumens: {e}")
+                sendMessage("error", f"{RUFNUMMER}: ❌ Fehler beim Abrufen des Datenvolumens: {e}")
 
             finally:
                 browser.close()
@@ -344,6 +353,11 @@ def get_smart_interval():
     else:
         return 60  # Fallback
 
+
+def fehlerFunktion():
+    sendMessage("error", f"{RUFNUMMER}: ❌ Fehler beim Abrufen des Datenvolumens. Bitte manuell prüfen.")
+    sendMessage("warn", f"{RUFNUMMER}: ❗️ Fehler beim Abrufen des Datenvolumens. Bitte manuell prüfen.")
+    sendMessage("info", f"{RUFNUMMER}: ❗️ Fehler beim Abrufen des Datenvolumens. Bitte manuell prüfen.")
 
 def get_interval(config):
     mode = config.get("SLEEP_MODE", "random")
@@ -372,6 +386,7 @@ def get_interval(config):
 if __name__ == "__main__":
     while True:
         check_for_update()
+        fehlerFunktion()
         logging.info("Starte neuen Durchlauf...")
         interval = login_and_check_data()
         logging.info(f"💤 Warte {interval} Sekunden...")
