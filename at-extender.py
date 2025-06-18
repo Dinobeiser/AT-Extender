@@ -312,11 +312,15 @@ def login_and_check_data():
                     logging.info("Versuche, 1 GB Datenvolumen nachzubuchen...")
                     if wait_and_click(page, 'one-button[slot="action"]'):
                         message = f"{RUFNUMMER}: Aktuelles Datenvolumen: {GB:.2f} GB - 1 GB wurde erfolgreich nachgebucht. ✅"
-
                     else:
                         raise Exception("❌ Konnte den Nachbuchungsbutton nicht klicken!")
 
                     sendMessage("info", message)
+
+                    interval = get_interval(config)
+                    return interval
+
+
 
                     interval = get_interval(config)
                     return interval
