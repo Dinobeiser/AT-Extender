@@ -18,7 +18,7 @@ sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 LOGIN_URL = "https://login.alditalk-kundenbetreuung.de/signin/XUI/#login/"
 DASHBOARD_URL = "https://www.alditalk-kundenportal.de/portal/auth/uebersicht/"
 
-VERSION = "1.1.5"  # Deine aktuelle Version
+VERSION = "1.1.6"  # Deine aktuelle Version
 
 REMOTE_VERSION_URL = "https://raw.githubusercontent.com/Dinobeiser/AT-Extender/main/version.txt"  # Link zur Version
 REMOTE_SCRIPT_URL = "https://raw.githubusercontent.com/Dinobeiser/AT-Extender/main/at-extender.py"  # Link zum neuesten Skript
@@ -312,22 +312,29 @@ def login_and_check_data():
                     logging.info("Versuche, 1 GB Datenvolumen nachzubuchen...")
                     if wait_and_click(page, 'one-button[slot="action"]'):
                         message = f"{RUFNUMMER}: Aktuelles Datenvolumen: {GB:.2f} GB - 1 GB wurde erfolgreich nachgebucht. ✅"
-                        logging.info("1 GB Datenvolumen wurde erfolgreich nachgebucht.")
+
                     else:
                         raise Exception("❌ Konnte den Nachbuchungsbutton nicht klicken!")
 
                     sendMessage("info", message)
 
-                else:
                     interval = get_interval(config)
-                    sendMessage("info",f"{RUFNUMMER}: Noch {LAST_GB:.2f} GB übrig. Nächster Run in {interval} Sekunden. ✅")
                     return interval
 
-                return  # Erfolgreicher Durchlauf, keine Wiederholung nötig
+
+
+                else:
+                    interval = get_interval(config)
+                    sendMessage("info", f"{RUFNUMMER}: Noch {LAST_GB:.2f} GB übrig. Nächster Run in {interval} Sekunden. ✅")
+                    return interval
+
+
+
+                return
 
             except Exception as e:
                 logging.error(f"Fehler im Versuch {attempt+1}: {e}")
-                sendMessage("error", f"{RUFNUMMER}: ❌ Fehler beim Abrufen des Datenvolumens: {e}")
+                send_telegram_message(f"{RUFNUMMER}: ❌ Fehler beim Abrufen des Datenvolumens: {e}")
 
             finally:
                 browser.close()
