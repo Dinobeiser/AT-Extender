@@ -88,7 +88,8 @@ Erstelle eine Datei namens `config.json` im gleichen Verzeichnis wie das Skript 
   "AUTO_UPDATE": "1",
   "SLEEP_MODE": "random",
   "SLEEP_INTERVAL": "70",
-  "BROWSER": "chromium"
+  "BROWSER": "chromium",
+  "INFO_LEVEL": "0"
 }
 ```
 
