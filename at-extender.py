@@ -38,7 +38,8 @@ sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 LOGIN_URL = "https://login.alditalk-kundenbetreuung.de/signin/XUI/#login/"
 DASHBOARD_URL = "https://www.alditalk-kundenportal.de/portal/auth/uebersicht/"
 
-VERSION = "1.1.9"  # Deine aktuelle Version
+VERSION = "1.1.10"  # Deine aktuelle Version
+
 
 REMOTE_VERSION_URL = "https://raw.githubusercontent.com/Dinobeiser/AT-Extender/main/version.txt"  # Link zur Version
 REMOTE_SCRIPT_URL = "https://raw.githubusercontent.com/Dinobeiser/AT-Extender/main/at-extender.py"  # Link zum neuesten Skript
@@ -73,6 +74,7 @@ TELEGRAM = config["TELEGRAM"]
 SLEEP_MODE = config["SLEEP_MODE"]
 SLEEP_INTERVAL = config["SLEEP_INTERVAL"]
 BROWSER = config["BROWSER"]
+INFO_LEVEL = int(config["INFO_LEVEL"])
 
 TELEGRAM_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 
@@ -92,6 +94,17 @@ except Exception as e:
     except Exception as save_error:
         logging.error(f"Konnte 'state.json' nicht neu erstellen: {save_error}")
 
+def sendMessage(type, message):
+    if TELEGRAM == "1":
+        if type == "info" and INFO_LEVEL == 1 and INFO_LEVEL != 3 and INFO_LEVEL != 2:
+            send_telegram_message(message)
+        elif type == "warn" and INFO_LEVEL >= 1 and INFO_LEVEL != 3:
+            send_telegram_message(message)
+        elif type == "error" and INFO_LEVEL >= 1:
+            send_telegram_message(message)
+        elif type != "info" and type != "warn" and type != "error":
+            logging.error(f"Unbekannter Typ '{type}' oder INFO_LEVEL zu niedrig: {message}")
+            send_telegram_message(f"Unbekannter Typ '{type}' oder INFO_LEVEL zu niedrig: {message}")
 
 def send_telegram_message(message, retries=3):
     if TELEGRAM == "1":
@@ -379,6 +392,31 @@ def login_and_check_data():
                                 if wait_and_click(page, selector):
                                     logging.info(f"Nachbuchungsbutton geklickt über Selector: {selector}")
                                     message = f"{RUFNUMMER}: Aktuelles Datenvolumen: {GB:.2f} GB - 1 GB wurde erfolgreich nachgebucht. 📲"
+                                    sendMessage("info", message)
+                                    clicked = True
+                                    break
+                        except Exception as e:
+                            logging.warning(f"❌ Fehler beim Versuch mit Selector {selector}: {e}")
+
+                    if is_community_plus:
+                        selectors = [
+                            'one-stack.usage-meter:nth-child(2) > one-usage-meter:nth-child(1) > one-button:nth-child(3)',
+                            'one-stack.usage-meter:nth-child(2) > one-stack:nth-child(1) > one-usage-meter:nth-child(1) > one-button:nth-child(3)'
+                        ]
+                    else:
+                        selectors = [
+                            'one-stack.usage-meter:nth-child(1) > one-usage-meter:nth-child(1) > one-button:nth-child(3)',
+                            'one-stack.usage-meter:nth-child(1) > one-stack:nth-child(1) > one-usage-meter:nth-child(1) > one-button:nth-child(3)'
+                        ]
+
+                    clicked = False
+                    for selector in selectors:
+                        try:
+                            button = page.query_selector(selector)
+                            if button and "1 GB" in button.text_content():
+                                if wait_and_click(page, selector):
+                                    logging.info(f"Nachbuchungsbutton geklickt über Selector: {selector}")
+                                    message = f"{RUFNUMMER}: Aktuelles Datenvolumen: {GB:.2f} GB - 1 GB wurde erfolgreich nachgebucht. 📲"
                                     send_telegram_message(message)
                                     clicked = True
                                     break
@@ -391,12 +429,17 @@ def login_and_check_data():
                     return interval
 
                 else:
+                    if not clicked:
+                        raise Exception("❌ Kein gültiger 1 GB-Button gefunden oder kein Klick möglich.")
+                    interval = get_interval(config)
+                    return interval
+
+                else:
                     logging.info(f"Aktuelles Datenvolumen: {GB:.2f} GB")
-                    send_telegram_message(f"{RUFNUMMER}: Noch {GB:.2f} GB übrig. Nächster Run in {interval} Sekunden. ✅")
+                    sendMessage("info", f"{RUFNUMMER}: Noch {GB:.2f} GB übrig. Nächster Run in {interval} Sekunden. ✅")
 
 
                 return get_interval(config)
-
             except Exception as e:
                 logging.error(f"Fehler im Versuch {attempt+1}: {e}")
                 send_telegram_message(f"{RUFNUMMER}: ❌ Fehler beim Abrufen des Datenvolumens: {e}")
