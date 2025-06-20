@@ -178,7 +178,7 @@ curl -X POST "https://api.telegram.org/bot<DEIN_TOKEN>/sendMessage" -d "chat_id=
 
 ## 🤝 Mithelfen
 
-Verbesserungen, Fehlerberichte oder Pull Requests sind herzlich willkommen!
+Verbesserungen oder Fehlerberichte sind herzlich willkommen!
 
 ---
 ## 💜 Unterstützung & Spenden
