@@ -1,5 +1,1 @@
-<<<<<<< HEAD
-1.1.6
-=======
 1.1.10
->>>>>>> 54667af (Das Programm zu 1.1.9 geupdated)

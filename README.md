@@ -61,7 +61,7 @@ pip install -r requirements.txt
 
 > Falls `requirements.txt` fehlt:
 ```bash
-pip install playwright requests
+pip install playwright requests psutil
 ```
 
 ### 3. Playwright-Umgebung initialisieren

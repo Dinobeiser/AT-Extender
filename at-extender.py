@@ -38,11 +38,8 @@ sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 LOGIN_URL = "https://login.alditalk-kundenbetreuung.de/signin/XUI/#login/"
 DASHBOARD_URL = "https://www.alditalk-kundenportal.de/portal/auth/uebersicht/"
 
-<<<<<<< HEAD
-VERSION = "1.1.6"  # Deine aktuelle Version
-=======
 VERSION = "1.1.10"  # Deine aktuelle Version
->>>>>>> 54667af (Das Programm zu 1.1.9 geupdated)
+
 
 REMOTE_VERSION_URL = "https://raw.githubusercontent.com/Dinobeiser/AT-Extender/main/version.txt"  # Link zur Version
 REMOTE_SCRIPT_URL = "https://raw.githubusercontent.com/Dinobeiser/AT-Extender/main/at-extender.py"  # Link zum neuesten Skript
@@ -375,17 +372,12 @@ def login_and_check_data():
 
                 if GB < 1.0:
                     logging.info("Versuche, 1 GB Datenvolumen nachzubuchen...")
-<<<<<<< HEAD
-                    if wait_and_click(page, 'one-button[slot="action"]'):
-                        message = f"{RUFNUMMER}: Aktuelles Datenvolumen: {GB:.2f} GB - 1 GB wurde erfolgreich nachgebucht. ✅"
-=======
 
                     if is_community_plus:
                         selectors = [
                             'one-stack.usage-meter:nth-child(2) > one-usage-meter:nth-child(1) > one-button:nth-child(3)',
                             'one-stack.usage-meter:nth-child(2) > one-stack:nth-child(1) > one-usage-meter:nth-child(1) > one-button:nth-child(3)'
                         ]
->>>>>>> 54667af (Das Programm zu 1.1.9 geupdated)
                     else:
                         selectors = [
                             'one-stack.usage-meter:nth-child(1) > one-usage-meter:nth-child(1) > one-button:nth-child(3)',
@@ -406,26 +398,37 @@ def login_and_check_data():
                         except Exception as e:
                             logging.warning(f"❌ Fehler beim Versuch mit Selector {selector}: {e}")
 
-<<<<<<< HEAD
+                    if is_community_plus:
+                        selectors = [
+                            'one-stack.usage-meter:nth-child(2) > one-usage-meter:nth-child(1) > one-button:nth-child(3)',
+                            'one-stack.usage-meter:nth-child(2) > one-stack:nth-child(1) > one-usage-meter:nth-child(1) > one-button:nth-child(3)'
+                        ]
+                    else:
+                        selectors = [
+                            'one-stack.usage-meter:nth-child(1) > one-usage-meter:nth-child(1) > one-button:nth-child(3)',
+                            'one-stack.usage-meter:nth-child(1) > one-stack:nth-child(1) > one-usage-meter:nth-child(1) > one-button:nth-child(3)'
+                        ]
+
+                    clicked = False
+                    for selector in selectors:
+                        try:
+                            button = page.query_selector(selector)
+                            if button and "1 GB" in button.text_content():
+                                if wait_and_click(page, selector):
+                                    logging.info(f"Nachbuchungsbutton geklickt über Selector: {selector}")
+                                    message = f"{RUFNUMMER}: Aktuelles Datenvolumen: {GB:.2f} GB - 1 GB wurde erfolgreich nachgebucht. 📲"
+                                    send_telegram_message(message)
+                                    clicked = True
+                                    break
+                        except Exception as e:
+                            logging.warning(f"❌ Fehler beim Versuch mit Selector {selector}: {e}")
+
+                    if not clicked:
+                        raise Exception("❌ Kein gültiger 1 GB-Button gefunden oder kein Klick möglich.")
                     interval = get_interval(config)
                     return interval
-
-
-
-                    interval = get_interval(config)
-                    return interval
-
-
 
                 else:
-                    interval = get_interval(config)
-                    sendMessage("info", f"{RUFNUMMER}: Noch {LAST_GB:.2f} GB übrig. Nächster Run in {interval} Sekunden. ✅")
-                    return interval
-
-
-
-                return
-=======
                     if not clicked:
                         raise Exception("❌ Kein gültiger 1 GB-Button gefunden oder kein Klick möglich.")
                     interval = get_interval(config)
@@ -437,8 +440,6 @@ def login_and_check_data():
 
 
                 return get_interval(config)
->>>>>>> 54667af (Das Programm zu 1.1.9 geupdated)
-
             except Exception as e:
                 logging.error(f"Fehler im Versuch {attempt+1}: {e}")
                 send_telegram_message(f"{RUFNUMMER}: ❌ Fehler beim Abrufen des Datenvolumens: {e}")
