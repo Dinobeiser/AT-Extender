@@ -8,7 +8,27 @@ import os
 import sys
 import io
 import re
+try:
+    import psutil
+except ImportError:
+    import subprocess
+    import sys
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "psutil"])
+    import psutil
 from playwright.sync_api import sync_playwright, TimeoutError
+
+def is_low_memory():
+    #Erkennt schwache Server (unter 2 GB RAM)
+    total_ram = psutil.virtual_memory().total / (1024**3)
+    return total_ram <= 2.0
+
+def get_launch_args(browser):
+    if browser == "chromium" and is_low_memory():
+        return ["--no-sandbox", "--disable-dev-shm-usage"]
+    else:
+        return []
+
+
 
 # Logging einrichten
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -18,14 +38,18 @@ sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 LOGIN_URL = "https://login.alditalk-kundenbetreuung.de/signin/XUI/#login/"
 DASHBOARD_URL = "https://www.alditalk-kundenportal.de/portal/auth/uebersicht/"
 
+<<<<<<< HEAD
 VERSION = "1.1.6"  # Deine aktuelle Version
+=======
+VERSION = "1.1.10"  # Deine aktuelle Version
+>>>>>>> 54667af (Das Programm zu 1.1.9 geupdated)
 
 REMOTE_VERSION_URL = "https://raw.githubusercontent.com/Dinobeiser/AT-Extender/main/version.txt"  # Link zur Version
 REMOTE_SCRIPT_URL = "https://raw.githubusercontent.com/Dinobeiser/AT-Extender/main/at-extender.py"  # Link zum neuesten Skript
 
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:137.0) Gecko/20100101 Firefox/139.0"
 HEADLESS = True
-
+browser = None
 
 def load_config():
     with open("config.json", "r") as f:
@@ -156,6 +180,81 @@ def wait_and_click(page, selector, timeout=5000, retries=5):
     logging.error(f"Konnte {selector} nicht klicken.")
     return False
 
+
+def get_datenvolumen(page):
+    logging.info("Lese Datenvolumen aus...")
+
+    try:
+        label_selectors = [
+            'one-stack.usage-meter:nth-child(1) > one-usage-meter:nth-child(1) > one-button:nth-child(2)',
+            'one-stack.usage-meter:nth-child(1) > one-stack:nth-child(1) > one-usage-meter:nth-child(1) > one-button:nth-child(2)'
+        ]
+
+        label_text = ""
+        is_community_plus = False  
+
+        for sel in label_selectors:
+            try:
+                element = page.query_selector(sel)
+                if element:
+                    label_text = element.text_content().strip()
+                    if label_text:
+                        break
+            except Exception as e:
+                logging.warning(f"Selector {sel} für Community+ Label nicht gefunden: {e}")
+
+        if "Inland & EU" in label_text:
+            is_community_plus = True
+            logging.info("Community+ erkannt")
+            GB_selectors = [
+                'one-stack.usage-meter:nth-child(2) > one-usage-meter:nth-child(1) > one-group:nth-child(1) > one-heading:nth-child(2)',
+                'one-stack.usage-meter:nth-child(2) > one-stack:nth-child(1) > one-usage-meter:nth-child(1) > one-group:nth-child(1) > one-heading:nth-child(2)'
+            ]
+        else:
+            logging.info("Kein Community+ erkannt")
+            GB_selectors = [
+                'one-stack.usage-meter:nth-child(1) > one-usage-meter:nth-child(1) > one-group:nth-child(1) > one-heading:nth-child(2)',
+                'one-stack.usage-meter:nth-child(1) > one-stack:nth-child(1) > one-usage-meter:nth-child(1) > one-group:nth-child(1) > one-heading:nth-child(2)'
+            ]
+    except Exception as e:
+        logging.warning(f"Fehler bei der Erkennung von Community+: {e}")
+        is_community_plus = False  # Fallback
+        GB_selectors = [
+            'one-stack.usage-meter:nth-child(1) > one-usage-meter:nth-child(1) > one-group:nth-child(1) > one-heading:nth-child(2)',
+            'one-stack.usage-meter:nth-child(1) > one-stack:nth-child(1) > one-usage-meter:nth-child(1) > one-group:nth-child(1) > one-heading:nth-child(2)'
+        ]
+
+
+    GB_text_raw = None
+    for sel in GB_selectors:
+        try:
+            element = page.query_selector(sel)
+            if element:
+                GB_text_raw = element.text_content()
+                if GB_text_raw:
+                    break
+        except Exception as e:
+            logging.warning(f"Selector {sel} nicht verfügbar: {e}")
+            continue
+
+    if not GB_text_raw:
+        raise Exception("Konnte das Datenvolumen nicht auslesen - kein gültiger Selector gefunden.")
+
+    match = re.search(r"([\d\.,]+)\s?(GB|MB)", GB_text_raw)
+    if not match:
+        raise ValueError(f"Unerwartetes Format beim Datenvolumen: {GB_text_raw}")
+
+    value, unit = match.groups()
+    value = value.replace(",", ".")
+
+    if unit == "MB":
+        GB = float(value) / 1024
+    else:
+        GB = float(value)
+
+    return GB, is_community_plus
+
+
 def login_and_check_data():
     global LAST_GB
     with sync_playwright() as p:
@@ -163,14 +262,15 @@ def login_and_check_data():
             try:
                 COOKIE_FILE = "cookies.json"
                 logging.info(f"Starte {BROWSER}...")
+                LAUNCH_ARGS = get_launch_args(BROWSER)
 
                 # Browser starten
                 if BROWSER == "firefox":
-                    browser = p.firefox.launch(headless=HEADLESS)
+                    browser = p.firefox.launch(headless=HEADLESS, args=LAUNCH_ARGS)
                 elif BROWSER == "webkit":
-                    browser = p.webkit.launch(headless=HEADLESS)
+                    browser = p.webkit.launch(headless=HEADLESS, args=LAUNCH_ARGS)
                 else:
-                    browser = p.chromium.launch(headless=HEADLESS)
+                    browser = p.chromium.launch(headless=HEADLESS, args=LAUNCH_ARGS)
 
                 # Cookies vorbereiten
                 if os.path.exists(COOKIE_FILE):
@@ -261,62 +361,52 @@ def login_and_check_data():
                     logging.info("Cookies werden erneuert.")
                     context.storage_state(path=COOKIE_FILE)
 
-                # Weiter mit Datenvolumen-Logik
-                logging.info("Lese Datenvolumen aus...")
-
-
-                GB_selectors = [
-                    'one-stack.usage-meter:nth-child(1) > one-usage-meter:nth-child(1) > one-group:nth-child(1) > one-heading:nth-child(2)',
-                    'one-stack.usage-meter:nth-child(1) > one-stack:nth-child(1) > one-usage-meter:nth-child(1) > one-group:nth-child(1) > one-heading:nth-child(2)'
-                ]
-
-                GB_text_raw = None
-                for sel in GB_selectors:
-                    try:
-                        element = page.query_selector(sel)
-                        if element:
-                            GB_text_raw = element.text_content()
-                            if GB_text_raw:
-                                break
-                    except Exception as e:
-                        logging.warning(f"Selector {sel} nicht verfügbar: {e}")
-                        continue
-
-                if not GB_text_raw:
-                    raise Exception("Konnte das Datenvolumen nicht auslesen - kein gültiger Selector gefunden.")
-
-                match = re.search(r"([\d\.,]+)\s?(GB|MB)", GB_text_raw)
-                if not match:
-                    raise ValueError(f"Unerwartetes Format beim Datenvolumen: {GB_text_raw}")
-
-                value, unit = match.groups()
-                value = value.replace(",", ".")
-
-                if unit == "MB":
-                    GB = float(value) / 1024
-                else:
-                    GB = float(value)
-
+                GB, is_community_plus = get_datenvolumen(page)
                 LAST_GB = GB
 
                 try:
                     with open("state.json", "w") as f:
                         json.dump({"last_gb": LAST_GB}, f)
                 except Exception as e:
-                    logging.warning(f"⚠️ Fehler beim Speichern des GB-Werts: {e}")
+                    logging.warning(f"Fehler beim Speichern des GB-Werts: {e}")
 
-                logging.info(f"Aktuelles Datenvolumen: {GB:.2f} GB")
+                interval = get_interval(config)
 
 
                 if GB < 1.0:
                     logging.info("Versuche, 1 GB Datenvolumen nachzubuchen...")
+<<<<<<< HEAD
                     if wait_and_click(page, 'one-button[slot="action"]'):
                         message = f"{RUFNUMMER}: Aktuelles Datenvolumen: {GB:.2f} GB - 1 GB wurde erfolgreich nachgebucht. ✅"
+=======
+
+                    if is_community_plus:
+                        selectors = [
+                            'one-stack.usage-meter:nth-child(2) > one-usage-meter:nth-child(1) > one-button:nth-child(3)',
+                            'one-stack.usage-meter:nth-child(2) > one-stack:nth-child(1) > one-usage-meter:nth-child(1) > one-button:nth-child(3)'
+                        ]
+>>>>>>> 54667af (Das Programm zu 1.1.9 geupdated)
                     else:
-                        raise Exception("❌ Konnte den Nachbuchungsbutton nicht klicken!")
+                        selectors = [
+                            'one-stack.usage-meter:nth-child(1) > one-usage-meter:nth-child(1) > one-button:nth-child(3)',
+                            'one-stack.usage-meter:nth-child(1) > one-stack:nth-child(1) > one-usage-meter:nth-child(1) > one-button:nth-child(3)'
+                        ]
 
-                    sendMessage("info", message)
+                    clicked = False
+                    for selector in selectors:
+                        try:
+                            button = page.query_selector(selector)
+                            if button and "1 GB" in button.text_content():
+                                if wait_and_click(page, selector):
+                                    logging.info(f"Nachbuchungsbutton geklickt über Selector: {selector}")
+                                    message = f"{RUFNUMMER}: Aktuelles Datenvolumen: {GB:.2f} GB - 1 GB wurde erfolgreich nachgebucht. 📲"
+                                    sendMessage("info", message)
+                                    clicked = True
+                                    break
+                        except Exception as e:
+                            logging.warning(f"❌ Fehler beim Versuch mit Selector {selector}: {e}")
 
+<<<<<<< HEAD
                     interval = get_interval(config)
                     return interval
 
@@ -335,14 +425,28 @@ def login_and_check_data():
 
 
                 return
+=======
+                    if not clicked:
+                        raise Exception("❌ Kein gültiger 1 GB-Button gefunden oder kein Klick möglich.")
+                    interval = get_interval(config)
+                    return interval
+
+                else:
+                    logging.info(f"Aktuelles Datenvolumen: {GB:.2f} GB")
+                    sendMessage("info", f"{RUFNUMMER}: Noch {GB:.2f} GB übrig. Nächster Run in {interval} Sekunden. ✅")
+
+
+                return get_interval(config)
+>>>>>>> 54667af (Das Programm zu 1.1.9 geupdated)
 
             except Exception as e:
                 logging.error(f"Fehler im Versuch {attempt+1}: {e}")
                 send_telegram_message(f"{RUFNUMMER}: ❌ Fehler beim Abrufen des Datenvolumens: {e}")
 
             finally:
-                browser.close()
-                logging.info("Browser geschlossen.")
+                if browser:
+                    browser.close()
+                    logging.info("Browser geschlossen.")
 
             time.sleep(2)
         logging.error("Skript hat nach 3 Versuchen aufgegeben.")
@@ -388,6 +492,7 @@ def get_interval(config):
 
     else:
         return random.randint(300, 500)
+
 
 if __name__ == "__main__":
     while True:
