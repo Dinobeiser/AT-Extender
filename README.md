@@ -84,6 +84,8 @@ Erstelle eine Datei namens `config.json` im gleichen Verzeichnis wie das Skript 
   "PASSWORT": "DeinPasswort",
   "TELEGRAM": "0",
   "BOT_TOKEN": "DeinTelegramBotToken",
+  "DISCORD": "0",
+  "DISCORD_WEBHOOK": "DeinDiscordWebhookURL",
   "CHAT_ID": "DeineChatID",
   "AUTO_UPDATE": "1",
   "SLEEP_MODE": "random",
@@ -99,6 +101,8 @@ Erstelle eine Datei namens `config.json` im gleichen Verzeichnis wie das Skript 
 | `RUFNUMMER`       | Deine ALDI TALK Nummer (mit 0 am Anfang)                                    |
 | `PASSWORT`        | Dein Kundenportal-Passwort                                                  |
 | `BOT_TOKEN`       | Telegram-Bot-Token von [@BotFather](https://t.me/BotFather)                 |
+| `DISCORD`         | `1` für Discord-Nachrichten, `0` für deaktivieren                           |
+| `DISCORD_WEBHOOK` | Dein Discord Webhook Link um Nachrichten zu senden                          |
 | `CHAT_ID`         | Deine Telegram-Chat-ID (z. B. via [@userinfobot](https://t.me/userinfobot)) |
 | `AUTO_UPDATE`     | `1` für Auto-Update aktivieren, `0` für deaktivieren                        |
 | `TELEGRAM`        | `1` für Telegram-Nachrichten, `0` für deaktivieren                          |
