@@ -38,8 +38,7 @@ sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 LOGIN_URL = "https://login.alditalk-kundenbetreuung.de/signin/XUI/#login/"
 DASHBOARD_URL = "https://www.alditalk-kundenportal.de/portal/auth/uebersicht/"
 
-VERSION = "1.1.10"  # Deine aktuelle Version
-
+VERSION = "1.2.0"  # Deine aktuelle Version
 
 REMOTE_VERSION_URL = "https://raw.githubusercontent.com/Dinobeiser/AT-Extender/main/version.txt"  # Link zur Version
 REMOTE_SCRIPT_URL = "https://raw.githubusercontent.com/Dinobeiser/AT-Extender/main/at-extender.py"  # Link zum neuesten Skript
@@ -177,6 +176,16 @@ def wait_and_click(page, selector, timeout=5000, retries=5):
     logging.error(f"Konnte {selector} nicht klicken.")
     return False
 
+def handle_cookie_banner(page):
+    try:
+        cookie_selector = 'button[data-testid="uc-deny-all-button"]'
+        if page.query_selector(cookie_selector):
+            logging.info("Achtung vor dem Krümelmonster.")
+            wait_and_click(page, cookie_selector)
+            logging.info("Nom Nom Nom")
+    except Exception as e:
+        logging.warning(f"Cookie Fenster nicht klickbar: {e}")
+
 
 def get_datenvolumen(page):
     logging.info("Lese Datenvolumen aus...")
@@ -188,7 +197,7 @@ def get_datenvolumen(page):
         ]
 
         label_text = ""
-        is_community_plus = False  
+        is_community_plus = False
 
         for sel in label_selectors:
             try:
@@ -291,13 +300,14 @@ def login_and_check_data():
                 # Dashboard aufrufen
                 page.goto(DASHBOARD_URL, wait_until="domcontentloaded")
                 time.sleep(3)
+                handle_cookie_banner(page)
 
                 # Prüfen ob auf Login-Seite umgeleitet wurde
                 if "login" in page.url:
                     logging.info("Nicht eingeloggt - Login wird durchgeführt...")
                     page.goto(LOGIN_URL)
                     page.wait_for_load_state("domcontentloaded")
-                    wait_and_click(page, 'button[data-testid="uc-deny-all-button"]')
+                    handle_cookie_banner(page)
 
                     logging.info("Fülle Login-Daten aus...")
                     page.fill('#input-5', RUFNUMMER)
@@ -309,6 +319,7 @@ def login_and_check_data():
                     logging.info("Warte auf Login...")
                     time.sleep(8)
                     page.wait_for_load_state("domcontentloaded")
+                    handle_cookie_banner(page)
 
                     if login_erfolgreich(page):
                         logging.info("Login erfolgreich - Cookies werden gespeichert.")
@@ -328,7 +339,7 @@ def login_and_check_data():
                         # Versuche Login erneut
                         page.goto(LOGIN_URL)
                         page.wait_for_load_state("domcontentloaded")
-                        wait_and_click(page, 'button[data-testid="uc-deny-all-button"]')
+                        handle_cookie_banner(page)
 
                         logging.info("Fülle Login-Daten aus (Fallback)...")
                         page.fill('#input-5', RUFNUMMER)
@@ -340,6 +351,7 @@ def login_and_check_data():
                         logging.info("Warte auf Login... (Fallback)")
                         time.sleep(8)
                         page.wait_for_load_state("domcontentloaded")
+                        handle_cookie_banner(page)
 
                         if login_erfolgreich(page):
                             logging.info("Fallback-Login erfolgreich neue Cookies werden gespeichert.")
@@ -428,11 +440,11 @@ def login_and_check_data():
                     interval = get_interval(config)
                     return interval
 
-                else:
-                    if not clicked:
-                        raise Exception("❌ Kein gültiger 1 GB-Button gefunden oder kein Klick möglich.")
-                    interval = get_interval(config)
-                    return interval
+                    else:
+                        if not clicked:
+                            raise Exception("❌ Kein gültiger 1 GB-Button gefunden oder kein Klick möglich.")
+                        interval = get_interval(config)
+                        return interval
 
                 else:
                     logging.info(f"Aktuelles Datenvolumen: {GB:.2f} GB")
