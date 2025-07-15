@@ -469,7 +469,7 @@ def login_and_check_data():
                                 if wait_and_click(page, selector):
                                     logging.info(f"Nachbuchungsbutton geklickt über Selector: {selector}")
                                     message = f"{RUFNUMMER}: Aktuelles Datenvolumen: {GB:.2f} GB - 1 GB wurde erfolgreich nachgebucht. 📲"
-                                    send_telegram_message(message)
+                                    sendMessage(message, "info")
                                     clicked = True
                                     break
                         except Exception as e:
@@ -488,7 +488,7 @@ def login_and_check_data():
                 return get_interval(config)
             except Exception as e:
                 logging.error(f"Fehler im Versuch {attempt+1}: {e}")
-                send_telegram_message(f"{RUFNUMMER}: ❌ Fehler beim Abrufen des Datenvolumens: {e}")
+                sendMessage(f"{RUFNUMMER}: ❌ Fehler beim Abrufen des Datenvolumens: {e}", "error")
 
             finally:
                 if browser:
