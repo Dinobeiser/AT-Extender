@@ -70,6 +70,8 @@ BOT_TOKEN = config["BOT_TOKEN"]
 CHAT_ID = config["CHAT_ID"]
 AUTO_UPDATE = config["AUTO_UPDATE"]
 TELEGRAM = config["TELEGRAM"]
+DISCORD = config["DISCORD"]
+DISCORD_WEBHOOK = config.get("DISCORD_WEBHOOK", "")
 SLEEP_MODE = config["SLEEP_MODE"]
 SLEEP_INTERVAL = config["SLEEP_INTERVAL"]
 BROWSER = config["BROWSER"]
@@ -97,13 +99,17 @@ def sendMessage(type, message):
     if TELEGRAM == "1":
         if type == "info" and INFO_LEVEL == 1 and INFO_LEVEL != 3 and INFO_LEVEL != 2:
             send_telegram_message(message)
+            send_discord_message(message, type)
         elif type == "warn" and INFO_LEVEL >= 1 and INFO_LEVEL != 3:
             send_telegram_message(message)
+            send_discord_message(message, type)
         elif type == "error" and INFO_LEVEL >= 1:
             send_telegram_message(message)
+            send_discord_message(message, type)
         elif type != "info" and type != "warn" and type != "error":
             logging.error(f"Unbekannter Typ '{type}' oder INFO_LEVEL zu niedrig: {message}")
             send_telegram_message(f"Unbekannter Typ '{type}' oder INFO_LEVEL zu niedrig: {message}")
+            send_discord_message(f"Unbekannter Typ '{type}' oder INFO_LEVEL zu niedrig: {message}", "error")
 
 def send_telegram_message(message, retries=3):
     if TELEGRAM == "1":
@@ -121,6 +127,40 @@ def send_telegram_message(message, retries=3):
         return False
     else:
         print("Keine Telegram Notify erwünscht")
+
+def send_discord_message(message, type, retries=3):
+    if DISCORD == "1":
+        color_map = {
+            "info": 3447003,    # Blau
+            "warn": 16776960,   # Gelb
+            "error": 15158332   # Rot
+        }
+        embed_color = color_map.get(type, 15158332)
+        embed = {
+            "description": message,
+            "color": embed_color
+        }
+        payload = {
+            "embeds": [embed]
+        }
+        for attempt in range(retries):
+            try:
+                if DISCORD_WEBHOOK:
+                    response = requests.post(DISCORD_WEBHOOK, json=payload)
+                    if response.status_code == 204:
+                        logging.info("Discord-Nachricht erfolgreich gesendet.")
+                        return True
+                    else:
+                        logging.warning(f"Fehler beim Senden (Versuch {attempt+1}): {response.text}")
+                else:
+                    logging.error("Discord Webhook URL ist nicht gesetzt.")
+            except Exception as e:
+                logging.error(f"Fehler beim Discord-Senden (Versuch {attempt+1}): {e}")
+        logging.error("Discord konnte nicht erreicht werden.")
+        return False
+    else:
+        print("Keine Discord Notify erwünscht")
+
 
 # Funktion, um Versionen zu vergleichen (Versionen in Tupel umwandeln)
 def compare_versions(local, remote):
@@ -439,12 +479,6 @@ def login_and_check_data():
                         raise Exception("❌ Kein gültiger 1 GB-Button gefunden oder kein Klick möglich.")
                     interval = get_interval(config)
                     return interval
-
-                    else:
-                        if not clicked:
-                            raise Exception("❌ Kein gültiger 1 GB-Button gefunden oder kein Klick möglich.")
-                        interval = get_interval(config)
-                        return interval
 
                 else:
                     logging.info(f"Aktuelles Datenvolumen: {GB:.2f} GB")

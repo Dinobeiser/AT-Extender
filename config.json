@@ -3,6 +3,8 @@
   "PASSWORT": "DeinPasswort",
   "TELEGRAM": "0",
   "BOT_TOKEN": "DeinTelegramBotToken",
+  "DISCORD": "0",
+  "DISCORD_WEBHOOK": "DeinDiscordWebhookURL",
   "CHAT_ID": "DeineChatID",
   "AUTO_UPDATE": "1",
   "SLEEP_MODE": "random",
