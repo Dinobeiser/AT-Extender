@@ -124,6 +124,7 @@ def send_telegram_message(message, retries=3):
             except Exception as e:
                 logging.error(f"Fehler beim Telegram-Senden (Versuch {attempt+1}): {e}")
         logging.error("Telegram konnte nicht erreicht werden.")
+        send_discord_message("Telegram ist aktuell nicht erreichbar", "warn")
         return False
     else:
         print("Keine Telegram Notify erwünscht")
@@ -157,6 +158,7 @@ def send_discord_message(message, type, retries=3):
             except Exception as e:
                 logging.error(f"Fehler beim Discord-Senden (Versuch {attempt+1}): {e}")
         logging.error("Discord konnte nicht erreicht werden.")
+        send_telegram_message("Discord ist aktuell nicht erreichbar")
         return False
     else:
         print("Keine Discord Notify erwünscht")
@@ -196,10 +198,12 @@ def check_for_update():
 
                 else:
                     logging.info(f"❌ Fehler beim Herunterladen der neuen Version, Statuscode: {update.status_code}")
+                    send_discord_message(f"❌ Fehler beim Herunterladen der neuen Version, Statuscode: {update.status_code}", "error")
             else:
                 logging.info("✅ Du verwendest die neueste Version.")
         except Exception as e:
             logging.info(f"❌ Fehler beim Update-Check: {e}")
+            send_discord_message("Fehler beim Update-Check: {e}", "warn")
     else:
         logging.info(f"Kein AutoUpdate erwünscht.")
 
