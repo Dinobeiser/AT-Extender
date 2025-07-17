@@ -124,7 +124,7 @@ def send_telegram_message(message, retries=3):
             except Exception as e:
                 logging.error(f"Fehler beim Telegram-Senden (Versuch {attempt+1}): {e}")
         logging.error("Telegram konnte nicht erreicht werden.")
-        send_discord_message("warn", "Telegram ist aktuell nicht erreichbar")
+        send_discord_message("Telegram ist aktuell nicht erreichbar", "warn")
         return False
     else:
         print("Keine Telegram Notify erwünscht")
@@ -495,7 +495,7 @@ def login_and_check_data():
                 return get_interval(config)
             except Exception as e:
                 logging.error(f"Fehler im Versuch {attempt+1}: {e}")
-                sendMessage(f"{RUFNUMMER}: ❌ Fehler beim Abrufen des Datenvolumens: {e}", "error")
+                sendMessage("error", f"{RUFNUMMER}: ❌ Fehler beim Abrufen des Datenvolumens: {e}")
 
             finally:
                 if browser:
