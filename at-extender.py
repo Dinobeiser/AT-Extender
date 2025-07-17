@@ -198,7 +198,7 @@ def check_for_update():
 
                 else:
                     logging.info(f"❌ Fehler beim Herunterladen der neuen Version, Statuscode: {update.status_code}")
-                    send_discord_message(f"❌ Fehler beim Herunterladen der neuen Version, Statuscode: {update.status_code}", "error")
+                    send_discord_message(f"❌ Fehler beim Herunterladen der neuen Version, Statuscode: {update.status_code}", "warn")
             else:
                 logging.info("✅ Du verwendest die neueste Version.")
         except Exception as e:
@@ -292,8 +292,8 @@ def get_datenvolumen(page):
 
     match = re.search(r"([\d\.,]+)\s?(GB|MB)", GB_text_raw)
     if not match:
-        raise ValueError(f"Unerwartetes Format beim Datenvolumen: {GB_text_raw}")
         send_discord_message(f"Unerwartetes Format beim Datenvolumen: {GB_text_raw}", "error")
+        raise ValueError(f"Unerwartetes Format beim Datenvolumen: {GB_text_raw}")    
 
     value, unit = match.groups()
     value = value.replace(",", ".")
@@ -423,7 +423,7 @@ def login_and_check_data():
                         json.dump({"last_gb": LAST_GB}, f)
                 except Exception as e:
                     logging.warning(f"Fehler beim Speichern des GB-Werts: {e}")
-                    send_message(f"Fehler beim Speichern des GB-Werts: {e}", "warn")
+                    send_discord_message(f"Fehler beim Speichern des GB-Werts: {e}", "warn")
 
                 interval = get_interval(config)
 
@@ -455,7 +455,7 @@ def login_and_check_data():
                                     break
                         except Exception as e:
                             logging.warning(f"❌ Fehler beim Versuch mit Selector {selector}: {e}")
-                            send_discord_message(f"❌ Fehler beim Versuch mit Selector {selector}: {e}, "warn")
+                            send_discord_message(f"❌ Fehler beim Versuch mit Selector {selector}: {e}", "warn")
 
                     if is_community_plus:
                         selectors = [
