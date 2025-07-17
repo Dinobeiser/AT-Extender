@@ -26,7 +26,7 @@ https://media.medion.com/cms/medion/alditalkde/ALDI-TALK-Leistungsbeschreibung.p
 
 - 🔍 Überwacht automatisch dein verbleibendes Datenvolumen
 - ↻ Versucht automatische Nachbuchung bei < 1 GB
-- 🔔 Sendet Benachrichtigungen über Telegram
+- 🔔 Sendet Benachrichtigungen über Telegram/Discord
 - ♻️ Vollautomatischer Auto-Update-Mechanismus
 - 🧠 Unterstützt zufällige oder feste Ausführungsintervalle
 - 🧪 Entwickelt mit Playwright & Headless-Browser
