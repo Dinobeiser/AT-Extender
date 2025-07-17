@@ -522,6 +522,18 @@ def get_smart_interval():
     else:
         return 60  # Fallback
 
+# Funktion die bei Wartungsarbeiten eingreifen soll, und das Intervall anpasst (nicht implementiert)
+def get_wartungs_interval():
+    if LAST_GB >= 3:
+        return random.randint(3600, 5400)
+    elif LAST_GB >= 2:
+        return random.randint(900, 1800)
+    elif LAST_GB >= 1.2:
+        return random.randint(600, 900)
+    elif LAST_GB >= 1.0:
+        return random.randint(300, 450)
+    else:
+        return random.randint(150, 240)
 
 def get_interval(config):
     mode = config.get("SLEEP_MODE", "random")
