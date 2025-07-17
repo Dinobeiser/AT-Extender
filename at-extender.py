@@ -124,7 +124,7 @@ def send_telegram_message(message, retries=3):
             except Exception as e:
                 logging.error(f"Fehler beim Telegram-Senden (Versuch {attempt+1}): {e}")
         logging.error("Telegram konnte nicht erreicht werden.")
-        send_discord_message("Telegram ist aktuell nicht erreichbar", "warn")
+        send_discord_message("warn", "Telegram ist aktuell nicht erreichbar")
         return False
     else:
         print("Keine Telegram Notify erwünscht")
@@ -293,6 +293,7 @@ def get_datenvolumen(page):
     match = re.search(r"([\d\.,]+)\s?(GB|MB)", GB_text_raw)
     if not match:
         raise ValueError(f"Unerwartetes Format beim Datenvolumen: {GB_text_raw}")
+        send_discord_message(f"Unerwartetes Format beim Datenvolumen: {GB_text_raw}", "error")
 
     value, unit = match.groups()
     value = value.replace(",", ".")
@@ -422,6 +423,7 @@ def login_and_check_data():
                         json.dump({"last_gb": LAST_GB}, f)
                 except Exception as e:
                     logging.warning(f"Fehler beim Speichern des GB-Werts: {e}")
+                    send_message(f"Fehler beim Speichern des GB-Werts: {e}", "warn")
 
                 interval = get_interval(config)
 
@@ -453,6 +455,7 @@ def login_and_check_data():
                                     break
                         except Exception as e:
                             logging.warning(f"❌ Fehler beim Versuch mit Selector {selector}: {e}")
+                            send_discord_message(f"❌ Fehler beim Versuch mit Selector {selector}: {e}, "warn")
 
                     if is_community_plus:
                         selectors = [
