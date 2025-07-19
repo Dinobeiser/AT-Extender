@@ -189,7 +189,7 @@ Verbesserungen oder Fehlerberichte sind herzlich willkommen!
 ---
 ## 💜 Unterstützung & Spenden
 
-Wenn du das Projekt unterstützen möchtest, lass gerne eine Spende da:
+Wenn du das Projekt unterstützen möchtest, lass gerne eine Spende da (an Dinobeiser):
 
 BTC: bc1q7rddem4wm6ryp3vqtrkxjq427qyy5yuckku90g
 
