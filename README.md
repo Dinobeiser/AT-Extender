@@ -6,6 +6,8 @@ Ein vollautomatisiertes Python-Skript zur Überwachung des verfügbaren ALDI TAL
 
 ## 🔍 Hinweis
 
+Dieses Repo ist eine Fork von Dinobeiser/AT-Extender, wie am Repo zu erkennen. Das bedeutet, dass hier dem Projekt noch andere Features hinzugefügt worden sind.
+
 Dieses Skript dient ausschließlich zu Demonstrationszwecken. Auch wenn die Nutzung von Skripten oder Bots zur Automatisierung technisch möglich und nachvollziehbar erscheint, ist deren Einsatz laut den Richtlinien der Firma ALDI strengstens untersagt. Verstöße gegen diese Regelung insbesondere automatisierte Abläufe können gemäß Punkt 10.3, Abschnitt g zu einem sofortigen Ausschluss bzw. zur Kündigung führen. 
 
 Link:
@@ -47,7 +49,7 @@ https://media.medion.com/cms/medion/alditalkde/ALDI-TALK-Leistungsbeschreibung.p
 ### 1. Repository klonen
 
 ```bash
-git clone https://github.com/Dinobeiser/AT-Extender.git
+git clone https://github.com/Nino678190/AT-Extender.git
 cd AT-Extender
 ```
 
