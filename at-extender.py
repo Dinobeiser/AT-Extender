@@ -192,7 +192,7 @@ def check_for_update():
                     with open(script_path, 'w', encoding='utf-8') as f:
                         f.write(update.text)
                     logging.info("✅ Update erfolgreich! Starte neu...")
-
+                    sendMessage("info", f"✅ Neue Version {remote_version} wurde heruntergeladen und installiert. Starte Skript neu...")
                     # Universeller Neustart - funktioniert mit venv & system-python
                     os.execv(sys.executable, [sys.executable] + sys.argv)
 
