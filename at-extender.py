@@ -40,8 +40,8 @@ DASHBOARD_URL = "https://www.alditalk-kundenportal.de/portal/auth/uebersicht/"
 
 VERSION = "1.2.1"  # Deine aktuelle Version
 
-REMOTE_VERSION_URL = "https://raw.githubusercontent.com/Dinobeiser/AT-Extender/main/version.txt"  # Link zur Version
-REMOTE_SCRIPT_URL = "https://raw.githubusercontent.com/Dinobeiser/AT-Extender/main/at-extender.py"  # Link zum neuesten Skript
+REMOTE_VERSION_URL = "https://raw.githubusercontent.com/Nino678190/AT-Extender/main/version.txt"  # Link zur Version
+REMOTE_SCRIPT_URL = "https://raw.githubusercontent.com/Nino678190/AT-Extender/main/at-extender.py"  # Link zum neuesten Skript
 
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:137.0) Gecko/20100101 Firefox/139.0"
 HEADLESS = True
