@@ -38,10 +38,10 @@ sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 LOGIN_URL = "https://login.alditalk-kundenbetreuung.de/signin/XUI/#login/"
 DASHBOARD_URL = "https://www.alditalk-kundenportal.de/portal/auth/uebersicht/"
 
-VERSION = "1.2.0"  # Deine aktuelle Version
+VERSION = "1.2.1"  # Deine aktuelle Version
 
-REMOTE_VERSION_URL = "https://raw.githubusercontent.com/Dinobeiser/AT-Extender/main/version.txt"  # Link zur Version
-REMOTE_SCRIPT_URL = "https://raw.githubusercontent.com/Dinobeiser/AT-Extender/main/at-extender.py"  # Link zum neuesten Skript
+REMOTE_VERSION_URL = "https://raw.githubusercontent.com/Nino678190/AT-Extender/main/version.txt"  # Link zur Version
+REMOTE_SCRIPT_URL = "https://raw.githubusercontent.com/Nino678190/AT-Extender/main/at-extender.py"  # Link zum neuesten Skript
 
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:137.0) Gecko/20100101 Firefox/139.0"
 HEADLESS = True
@@ -70,9 +70,12 @@ BOT_TOKEN = config["BOT_TOKEN"]
 CHAT_ID = config["CHAT_ID"]
 AUTO_UPDATE = config["AUTO_UPDATE"]
 TELEGRAM = config["TELEGRAM"]
+DISCORD = config["DISCORD"]
+DISCORD_WEBHOOK = config.get("DISCORD_WEBHOOK", "")
 SLEEP_MODE = config["SLEEP_MODE"]
 SLEEP_INTERVAL = config["SLEEP_INTERVAL"]
 BROWSER = config["BROWSER"]
+INFO_LEVEL = int(config["INFO_LEVEL"])
 
 TELEGRAM_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 
@@ -92,6 +95,21 @@ except Exception as e:
     except Exception as save_error:
         logging.error(f"Konnte 'state.json' nicht neu erstellen: {save_error}")
 
+def sendMessage(type, message):
+    if TELEGRAM == "1":
+        if type == "info" and INFO_LEVEL == 1 and INFO_LEVEL != 3 and INFO_LEVEL != 2:
+            send_telegram_message(message)
+            send_discord_message(message, type)
+        elif type == "warn" and INFO_LEVEL >= 1 and INFO_LEVEL != 3:
+            send_telegram_message(message)
+            send_discord_message(message, type)
+        elif type == "error" and INFO_LEVEL >= 1:
+            send_telegram_message(message)
+            send_discord_message(message, type)
+        elif type != "info" and type != "warn" and type != "error":
+            logging.error(f"Unbekannter Typ '{type}' oder INFO_LEVEL zu niedrig: {message}")
+            send_telegram_message(f"Unbekannter Typ '{type}' oder INFO_LEVEL zu niedrig: {message}")
+            send_discord_message(f"Unbekannter Typ '{type}' oder INFO_LEVEL zu niedrig: {message}", "error")
 
 def send_telegram_message(message, retries=3):
     if TELEGRAM == "1":
@@ -106,9 +124,45 @@ def send_telegram_message(message, retries=3):
             except Exception as e:
                 logging.error(f"Fehler beim Telegram-Senden (Versuch {attempt+1}): {e}")
         logging.error("Telegram konnte nicht erreicht werden.")
+        send_discord_message("Telegram ist aktuell nicht erreichbar", "warn")
         return False
     else:
         print("Keine Telegram Notify erwünscht")
+
+def send_discord_message(message, type, retries=3):
+    if DISCORD == "1":
+        color_map = {
+            "info": 3447003,    # Blau
+            "warn": 16776960,   # Gelb
+            "error": 15158332   # Rot
+        }
+        embed_color = color_map.get(type, 15158332)
+        embed = {
+            "description": message,
+            "color": embed_color
+        }
+        payload = {
+            "embeds": [embed]
+        }
+        for attempt in range(retries):
+            try:
+                if DISCORD_WEBHOOK:
+                    response = requests.post(DISCORD_WEBHOOK, json=payload)
+                    if response.status_code == 204:
+                        logging.info("Discord-Nachricht erfolgreich gesendet.")
+                        return True
+                    else:
+                        logging.warning(f"Fehler beim Senden (Versuch {attempt+1}): {response.text}")
+                else:
+                    logging.error("Discord Webhook URL ist nicht gesetzt.")
+            except Exception as e:
+                logging.error(f"Fehler beim Discord-Senden (Versuch {attempt+1}): {e}")
+        logging.error("Discord konnte nicht erreicht werden.")
+        send_telegram_message("Discord ist aktuell nicht erreichbar")
+        return False
+    else:
+        print("Keine Discord Notify erwünscht")
+
 
 # Funktion, um Versionen zu vergleichen (Versionen in Tupel umwandeln)
 def compare_versions(local, remote):
@@ -138,16 +192,18 @@ def check_for_update():
                     with open(script_path, 'w', encoding='utf-8') as f:
                         f.write(update.text)
                     logging.info("✅ Update erfolgreich! Starte neu...")
-
+                    sendMessage("info", f"✅ Neue Version {remote_version} wurde heruntergeladen und installiert. Starte Skript neu...")
                     # Universeller Neustart - funktioniert mit venv & system-python
                     os.execv(sys.executable, [sys.executable] + sys.argv)
 
                 else:
                     logging.info(f"❌ Fehler beim Herunterladen der neuen Version, Statuscode: {update.status_code}")
+                    send_discord_message(f"❌ Fehler beim Herunterladen der neuen Version, Statuscode: {update.status_code}", "warn")
             else:
                 logging.info("✅ Du verwendest die neueste Version.")
         except Exception as e:
             logging.info(f"❌ Fehler beim Update-Check: {e}")
+            send_discord_message("Fehler beim Update-Check: {e}", "warn")
     else:
         logging.info(f"Kein AutoUpdate erwünscht.")
 
@@ -236,7 +292,8 @@ def get_datenvolumen(page):
 
     match = re.search(r"([\d\.,]+)\s?(GB|MB)", GB_text_raw)
     if not match:
-        raise ValueError(f"Unerwartetes Format beim Datenvolumen: {GB_text_raw}")
+        send_discord_message(f"Unerwartetes Format beim Datenvolumen: {GB_text_raw}", "error")
+        raise ValueError(f"Unerwartetes Format beim Datenvolumen: {GB_text_raw}")    
 
     value, unit = match.groups()
     value = value.replace(",", ".")
@@ -366,6 +423,7 @@ def login_and_check_data():
                         json.dump({"last_gb": LAST_GB}, f)
                 except Exception as e:
                     logging.warning(f"Fehler beim Speichern des GB-Werts: {e}")
+                    send_discord_message(f"Fehler beim Speichern des GB-Werts: {e}", "warn")
 
                 interval = get_interval(config)
 
@@ -392,7 +450,33 @@ def login_and_check_data():
                                 if wait_and_click(page, selector):
                                     logging.info(f"Nachbuchungsbutton geklickt über Selector: {selector}")
                                     message = f"{RUFNUMMER}: Aktuelles Datenvolumen: {GB:.2f} GB - 1 GB wurde erfolgreich nachgebucht. 📲"
-                                    send_telegram_message(message)
+                                    sendMessage("info", message)
+                                    clicked = True
+                                    break
+                        except Exception as e:
+                            logging.warning(f"❌ Fehler beim Versuch mit Selector {selector}: {e}")
+                            send_discord_message(f"❌ Fehler beim Versuch mit Selector {selector}: {e}", "warn")
+
+                    if is_community_plus:
+                        selectors = [
+                            'one-stack.usage-meter:nth-child(2) > one-usage-meter:nth-child(1) > one-button:nth-child(3)',
+                            'one-stack.usage-meter:nth-child(2) > one-stack:nth-child(1) > one-usage-meter:nth-child(1) > one-button:nth-child(3)'
+                        ]
+                    else:
+                        selectors = [
+                            'one-stack.usage-meter:nth-child(1) > one-usage-meter:nth-child(1) > one-button:nth-child(3)',
+                            'one-stack.usage-meter:nth-child(1) > one-stack:nth-child(1) > one-usage-meter:nth-child(1) > one-button:nth-child(3)'
+                        ]
+
+                    clicked = False
+                    for selector in selectors:
+                        try:
+                            button = page.query_selector(selector)
+                            if button and "1 GB" in button.text_content():
+                                if wait_and_click(page, selector):
+                                    logging.info(f"Nachbuchungsbutton geklickt über Selector: {selector}")
+                                    message = f"{RUFNUMMER}: Aktuelles Datenvolumen: {GB:.2f} GB - 1 GB wurde erfolgreich nachgebucht. 📲"
+                                    sendMessage(message, "info")
                                     clicked = True
                                     break
                         except Exception as e:
@@ -405,14 +489,13 @@ def login_and_check_data():
 
                 else:
                     logging.info(f"Aktuelles Datenvolumen: {GB:.2f} GB")
-                    send_telegram_message(f"{RUFNUMMER}: Noch {GB:.2f} GB übrig. Nächster Run in {interval} Sekunden. ✅")
+                    sendMessage("info", f"{RUFNUMMER}: Noch {GB:.2f} GB übrig. Nächster Run in {interval} Sekunden. ✅")
 
 
                 return get_interval(config)
-
             except Exception as e:
                 logging.error(f"Fehler im Versuch {attempt+1}: {e}")
-                send_telegram_message(f"{RUFNUMMER}: ❌ Fehler beim Abrufen des Datenvolumens: {e}")
+                sendMessage("error", f"{RUFNUMMER}: ❌ Fehler beim Abrufen des Datenvolumens: {e}")
 
             finally:
                 if browser:
@@ -439,6 +522,18 @@ def get_smart_interval():
     else:
         return 60  # Fallback
 
+# Funktion die bei Wartungsarbeiten eingreifen soll, und das Intervall anpasst (nicht implementiert)
+def get_wartungs_interval():
+    if LAST_GB >= 3:
+        return random.randint(3600, 5400)
+    elif LAST_GB >= 2:
+        return random.randint(900, 1800)
+    elif LAST_GB >= 1.2:
+        return random.randint(600, 900)
+    elif LAST_GB >= 1.0:
+        return random.randint(300, 450)
+    else:
+        return random.randint(150, 240)
 
 def get_interval(config):
     mode = config.get("SLEEP_MODE", "random")

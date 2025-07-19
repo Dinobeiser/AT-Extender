@@ -6,6 +6,8 @@ Ein vollautomatisiertes Python-Skript zur Überwachung des verfügbaren ALDI TAL
 
 ## 🔍 Hinweis
 
+Dieses Repository ist ein Fork von [Dinobeiser/AT-Extender](https://github.com/Dinobeiser/AT-Extender). Es wurden zusätzliche Features und Anpassungen vorgenommen, die über den ursprünglichen Funktionsumfang hinausgehen.
+
 Dieses Skript dient ausschließlich zu Demonstrationszwecken. Auch wenn die Nutzung von Skripten oder Bots zur Automatisierung technisch möglich und nachvollziehbar erscheint, ist deren Einsatz laut den Richtlinien der Firma ALDI strengstens untersagt. Verstöße gegen diese Regelung insbesondere automatisierte Abläufe können gemäß Punkt 10.3, Abschnitt g zu einem sofortigen Ausschluss bzw. zur Kündigung führen. 
 
 Link:
@@ -26,7 +28,7 @@ https://media.medion.com/cms/medion/alditalkde/ALDI-TALK-Leistungsbeschreibung.p
 
 - 🔍 Überwacht automatisch dein verbleibendes Datenvolumen
 - ↻ Versucht automatische Nachbuchung bei < 1 GB
-- 🔔 Sendet Benachrichtigungen über Telegram
+- 🔔 Sendet Benachrichtigungen über Telegram/Discord
 - ♻️ Vollautomatischer Auto-Update-Mechanismus
 - 🧠 Unterstützt zufällige oder feste Ausführungsintervalle
 - 🧪 Entwickelt mit Playwright & Headless-Browser
@@ -47,7 +49,7 @@ https://media.medion.com/cms/medion/alditalkde/ALDI-TALK-Leistungsbeschreibung.p
 ### 1. Repository klonen
 
 ```bash
-git clone https://github.com/Dinobeiser/AT-Extender.git
+git clone https://github.com/Nino678190/AT-Extender.git
 cd AT-Extender
 ```
 
@@ -84,27 +86,32 @@ Erstelle eine Datei namens `config.json` im gleichen Verzeichnis wie das Skript 
   "PASSWORT": "DeinPasswort",
   "TELEGRAM": "0",
   "BOT_TOKEN": "DeinTelegramBotToken",
+  "DISCORD": "0",
+  "DISCORD_WEBHOOK": "DeinDiscordWebhookURL",
   "CHAT_ID": "DeineChatID",
   "AUTO_UPDATE": "1",
   "SLEEP_MODE": "random",
   "SLEEP_INTERVAL": "70",
-  "BROWSER": "chromium"
+  "BROWSER": "chromium",
+  "INFO_LEVEL": "0"
 }
 ```
 
 ### Felder erklärt:
-| Schlüssel        | Beschreibung                                                                 |
-|------------------|------------------------------------------------------------------------------|
+| Schlüssel        | Beschreibung                                                                 | Hinweis |
+|------------------|------------------------------------------------------------------------------|---|
 | `RUFNUMMER`       | Deine ALDI TALK Nummer (mit 0 am Anfang)                                    |
 | `PASSWORT`        | Dein Kundenportal-Passwort                                                  |
 | `BOT_TOKEN`       | Telegram-Bot-Token von [@BotFather](https://t.me/BotFather)                 |
+| `DISCORD`         | `1` für Discord-Nachrichten, `0` für deaktivieren                           |
+| `DISCORD_WEBHOOK` | Dein Discord Webhook Link um Nachrichten zu senden                          |
 | `CHAT_ID`         | Deine Telegram-Chat-ID (z. B. via [@userinfobot](https://t.me/userinfobot)) |
 | `AUTO_UPDATE`     | `1` für Auto-Update aktivieren, `0` für deaktivieren                        |
 | `TELEGRAM`        | `1` für Telegram-Nachrichten, `0` für deaktivieren                          |
 | `SLEEP_MODE`      | Steuert, wie lange das Skript nach jedem Durchlauf pausiert: <br><br> `"random"` - Zufälliges Intervall zwischen ca. 5-8 Minuten. <br> `"fixed"` - Nutzt das feste Intervall aus `SLEEP_INTERVAL` in Sekunden. <br> `"smart"` - Dynamisch an das verbleibende Datenvolumen angepasst
 | `SLEEP_INTERVAL`  | Intervall in Sekunden (nur relevant bei `"fixed"`), **min. 70 Sekunden**    |
-| `BROWSER`         | `"chromium"` (Standard) oder `"firefox"`                                    |
-| Hinweis: Manche Server-configs funktionieren stabiler mit "firefox" - ideal für schwächere Instanzen oder wenn input-6/help-text nicht geladen werden. |
+| `BROWSER`         | `"chromium"` (Standard) oder `"firefox"` | Hinweis: Manche Server-configs funktionieren stabiler mit "firefox" - ideal für schwächere Instanzen oder wenn input-6/help-text nicht geladen werden. |
+| `INFO_LEVEL`| `"0"` (Standart) oder `"1"` (Alle Benachrichtigungen), `"2"` (Nur Warnungen und Fehler), `"3"` (Nur Fehlermeldungen)|
 
 ---
 
@@ -182,7 +189,7 @@ Verbesserungen oder Fehlerberichte sind herzlich willkommen!
 ---
 ## 💜 Unterstützung & Spenden
 
-Wenn du das Projekt unterstützen möchtest, lass gerne eine Spende da:
+Wenn du das Projekt unterstützen möchtest, lass gerne eine Spende da (an Dinobeiser):
 
 BTC: bc1q7rddem4wm6ryp3vqtrkxjq427qyy5yuckku90g
 
