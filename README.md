@@ -88,7 +88,7 @@ Erstelle eine Datei namens `config.json` im gleichen Verzeichnis wie das Skript 
   "AUTO_UPDATE": "1",
   "SLEEP_MODE": "random",
   "SLEEP_INTERVAL": "70",
-  "BROWSER": "chromium"
+  "BROWSER": "firefox"
 }
 ```
 
@@ -103,7 +103,7 @@ Erstelle eine Datei namens `config.json` im gleichen Verzeichnis wie das Skript 
 | `TELEGRAM`        | `1` für Telegram-Nachrichten, `0` für deaktivieren                          |
 | `SLEEP_MODE`      | Steuert, wie lange das Skript nach jedem Durchlauf pausiert: <br><br> `"random"` - Zufälliges Intervall zwischen ca. 5-8 Minuten. <br> `"fixed"` - Nutzt das feste Intervall aus `SLEEP_INTERVAL` in Sekunden. <br> `"smart"` - Dynamisch an das verbleibende Datenvolumen angepasst
 | `SLEEP_INTERVAL`  | Intervall in Sekunden (nur relevant bei `"fixed"`), **min. 70 Sekunden**    |
-| `BROWSER`         | `"chromium"` (Standard) oder `"firefox"`                                    |
+| `BROWSER`         | `"firefox"` (Standard) oder `"chromium"`                                    |
 | Hinweis: Manche Server-configs funktionieren stabiler mit "firefox" - ideal für schwächere Instanzen oder wenn input-6/help-text nicht geladen werden. |
 
 ---
@@ -148,6 +148,168 @@ crontab -e
 ```
 
 ---
+
+## 🐳 Docker Unterstützung
+
+AT-Extender unterstützt jetzt Docker für einfache Bereitstellung und containerisierte Ausführung!
+
+### Schnellstart mit Docker
+
+#### Mit Docker Compose (Empfohlen)
+
+1. **Repository klonen:**
+   ```bash
+   git clone https://github.com/Dinobeiser/AT-Extender.git
+   cd AT-Extender
+   ```
+
+2. **Umgebungsdatei erstellen:**
+   ```bash
+   cp .env.example .env
+   # .env mit deinen Zugangsdaten bearbeiten
+   ```
+
+3. **Mit Docker Compose starten:**
+   ```bash
+   docker-compose up -d
+   ```
+
+#### Docker direkt verwenden
+
+1. **Image herunterladen:**
+   ```bash
+   docker pull ghcr.io/dinobeiser/at-extender:latest
+   ```
+
+2. **Container starten:**
+   ```bash
+   docker run -d \
+     --name at-extender \
+     --restart unless-stopped \
+     -e RUFNUMMER="DeineRufnummer" \
+     -e PASSWORT="DeinPasswort" \
+     -e TELEGRAM="1" \
+     -e BOT_TOKEN="DeinTelegramBotToken" \
+     -e CHAT_ID="DeineChatID" \
+     -e SLEEP_MODE="smart" \
+     -v at_extender_data:/app/data \
+     ghcr.io/dinobeiser/at-extender:latest
+   ```
+
+### Docker Konfiguration
+
+#### Umgebungsvariablen
+
+Alle Konfigurationen können über Umgebungsvariablen bereitgestellt werden (siehe `.env.example`):
+
+| Variable | Beschreibung | Standard |
+|----------|-------------|----------|
+| `RUFNUMMER` | Deine ALDI TALK Nummer | **Erforderlich** |
+| `PASSWORT` | Dein Kundenportal-Passwort | **Erforderlich** |
+| `TELEGRAM` | Telegram-Benachrichtigungen aktivieren (0/1) | `0` |
+| `BOT_TOKEN` | Telegram Bot Token | - |
+| `CHAT_ID` | Telegram Chat ID | - |
+| `AUTO_UPDATE` | Auto-Updates aktivieren (0/1) | `1` |
+| `SLEEP_MODE` | Schlafmodus (`smart`/`fixed`/`random`) | `smart` |
+| `SLEEP_INTERVAL` | Festes Intervall in Sekunden | `70` |
+| `BROWSER` | Zu verwendender Browser (`chromium`/`firefox`) | `chromium` |
+
+#### Docker Secrets (Produktion)
+
+Für Produktionsumgebungen verwende Docker Secrets:
+
+```yaml
+# docker-compose.yml
+services:
+  at-extender:
+    image: ghcr.io/dinobeiser/at-extender:latest
+    secrets:
+      - at_extender_rufnummer
+      - at_extender_passwort
+      - at_extender_bot_token
+      - at_extender_chat_id
+
+secrets:
+  at_extender_rufnummer:
+    file: ./secrets/rufnummer.txt
+  at_extender_passwort:
+    file: ./secrets/passwort.txt
+  at_extender_bot_token:
+    file: ./secrets/bot_token.txt
+  at_extender_chat_id:
+    file: ./secrets/chat_id.txt
+```
+
+#### Datenpersistenz
+
+Der Container speichert persistente Daten in `/app/data`:
+- `state.json` - Aktueller Datenvolumen-Status
+- `cookies.json` - Login-Session-Cookies
+
+Mounte ein Volume oder Host-Verzeichnis für Datenpersistenz:
+```bash
+-v ./data:/app/data  # Host-Verzeichnis
+-v at_extender_data:/app/data  # Named Volume
+```
+
+### Aus Quellcode erstellen
+
+```bash
+git clone https://github.com/Dinobeiser/AT-Extender.git
+cd AT-Extender
+docker build -t at-extender .
+```
+
+### Multi-Architektur-Unterstützung
+
+Vorgefertigte Images sind verfügbar für:
+- `linux/amd64` (Intel/AMD x64)
+- `linux/arm64` (ARM64/Apple Silicon)
+
+Docker zieht automatisch die richtige Architektur für deine Plattform.
+
+### Verfügbare Tags
+
+- `latest` - Neueste stabile Version vom main Branch
+- `v1.2.2` - Spezifische Versions-Tags
+- `main` - Neueste Entwicklungsversion
+
+### Health Checks
+
+Das Docker Image enthält Health Checks, die überprüfen, ob der Python-Prozess korrekt läuft. Du kannst die Container-Gesundheit überprüfen mit:
+
+```bash
+docker ps  # Health-Status prüfen
+docker inspect at-extender  # Detaillierte Health-Infos
+```
+
+### Logs
+
+Container-Logs anzeigen:
+```bash
+docker logs at-extender
+docker logs -f at-extender  # Logs folgen
+```
+
+### Fehlerbehebung
+
+#### Container stoppt sofort
+- Prüfe, dass erforderliche Umgebungsvariablen (`RUFNUMMER`, `PASSWORT`) gesetzt sind
+- Überprüfe Zugangsdaten
+- Prüfe Logs: `docker logs at-extender`
+
+#### Browser-Probleme
+- Versuche anderen Browser mit `BROWSER=firefox`
+- Stelle ausreichend Speicher sicher (empfohlen: 1GB+)
+- Prüfe, ob Container erforderliche Berechtigungen hat
+
+#### Berechtigungsprobleme
+- Der Container läuft als Benutzer-ID 1000
+- Stelle sicher, dass gemountete Volumes korrekte Berechtigungen haben:
+  ```bash
+  sudo chown -R 1000:1000 ./data
+  ```
+
 
 ## 🚇 Problembehandlung
 

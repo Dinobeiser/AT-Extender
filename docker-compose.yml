@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  at-extender:
+    build: .
+    # Use pre-built image:
+    # image: ghcr.io/dinobeiser/at-extender:latest
+    container_name: at-extender
+    restart: unless-stopped
+    
+    environment:
+      # Required: ALDI TALK credentials
+      - RUFNUMMER=${RUFNUMMER:-}
+      - PASSWORT=${PASSWORT:-}
+      
+      # Optional: Telegram notifications
+      - TELEGRAM=${TELEGRAM:-0}
+      - BOT_TOKEN=${BOT_TOKEN:-}
+      - CHAT_ID=${CHAT_ID:-}
+      
+      # Optional: Configuration
+      - AUTO_UPDATE=${AUTO_UPDATE:-1}
+      - SLEEP_MODE=${SLEEP_MODE:-smart}
+      - SLEEP_INTERVAL=${SLEEP_INTERVAL:-70}
+      - BROWSER=${BROWSER:-firefox}
+      
+      # Docker-specific settings
+      - HEADLESS=true
+      - PYTHONUNBUFFERED=1
+    
+    # Alternative: Use Docker secrets (recommended)
+    # secrets:
+    #   - at_extender_config
+    
+    volumes:
+      # Persist state and cookies
+      - at_extender_data:/app/data
+      # Alternative: Use host directory
+      # - ./data:/app/data
+      
+      # Optional: Mount custom config (if not using environment variables)
+      # - ./config.json:/app/config.json:ro
+    
+    # Security: Run as non-root user
+    user: "1000:1000"
+    
+    # Resource limits (adjust as needed)
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.1'
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  at_extender_data:
+    driver: local
+
+# Docker secrets example (uncomment to use)
+# secrets:
+#   at_extender_config:
+#     file: ./secrets/config.json

@@ -48,18 +48,90 @@ HEADLESS = True
 browser = None
 
 def load_config():
-    with open("config.json", "r") as f:
-        config = json.load(f)
+    # First, try to load from environment variables (Docker support)
+    config = {
+        "RUFNUMMER": os.getenv("RUFNUMMER"),
+        "PASSWORT": os.getenv("PASSWORT"),
+        "TELEGRAM": os.getenv("TELEGRAM"),
+        "BOT_TOKEN": os.getenv("BOT_TOKEN"),
+        "CHAT_ID": os.getenv("CHAT_ID"),
+        "AUTO_UPDATE": os.getenv("AUTO_UPDATE"),
+        "SLEEP_MODE": os.getenv("SLEEP_MODE"),
+        "SLEEP_INTERVAL": os.getenv("SLEEP_INTERVAL"),
+        "BROWSER": os.getenv("BROWSER")
+    }
+    
+    # Check if we have the required environment variables
+    if config["RUFNUMMER"] and config["PASSWORT"]:
+        logging.info("Verwende Konfiguration aus Umgebungsvariablen")
+        # Set defaults for optional values
+        config["TELEGRAM"] = config["TELEGRAM"] or "0"
+        config["BOT_TOKEN"] = config["BOT_TOKEN"] or ""
+        config["CHAT_ID"] = config["CHAT_ID"] or ""
+        config["AUTO_UPDATE"] = config["AUTO_UPDATE"] or "1"
+        config["SLEEP_MODE"] = config["SLEEP_MODE"] or "smart"
+        config["SLEEP_INTERVAL"] = config["SLEEP_INTERVAL"] or "70"
+        config["BROWSER"] = config["BROWSER"] or "chromium"
+    else:
+        # Try to load from Docker secrets
+        secrets_config = load_docker_secrets()
+        if secrets_config:
+            logging.info("Verwende Konfiguration aus Docker Secrets")
+            config.update(secrets_config)
+        else:
+            # Fall back to config.json
+            config_file = os.getenv("CONFIG_FILE", "config.json")
+            if os.path.exists(config_file):
+                logging.info(f"Verwende Konfiguration aus {config_file}")
+                with open(config_file, "r") as f:
+                    config = json.load(f)
+            else:
+                logging.error("Keine Konfiguration gefunden! Bitte config.json, Umgebungsvariablen oder Docker Secrets bereitstellen.")
+                sys.exit(1)
 
     valid_browsers = ["chromium", "firefox", "webkit"]
     browser = config.get("BROWSER", "chromium").lower()
 
     if browser not in valid_browsers:
-        logging.warning(f"Ungültiger Browserwert '{browser}' in config.json - fallback auf 'chromium'")
+        logging.warning(f"Ungültiger Browserwert '{browser}' in config - fallback auf 'chromium'")
         browser = "chromium"
 
     config["BROWSER"] = browser
     return config
+
+def load_docker_secrets():
+    """Lädt Konfiguration aus Docker Secrets"""
+    secrets_dir = "/run/secrets"
+    if not os.path.exists(secrets_dir):
+        return None
+    
+    config = {}
+    secret_files = {
+        "RUFNUMMER": "at_extender_rufnummer",
+        "PASSWORT": "at_extender_passwort",
+        "TELEGRAM": "at_extender_telegram",
+        "BOT_TOKEN": "at_extender_bot_token",
+        "CHAT_ID": "at_extender_chat_id",
+        "AUTO_UPDATE": "at_extender_auto_update",
+        "SLEEP_MODE": "at_extender_sleep_mode",
+        "SLEEP_INTERVAL": "at_extender_sleep_interval",
+        "BROWSER": "at_extender_browser"
+    }
+    
+    for key, secret_file in secret_files.items():
+        secret_path = os.path.join(secrets_dir, secret_file)
+        if os.path.exists(secret_path):
+            try:
+                with open(secret_path, "r") as f:
+                    config[key] = f.read().strip()
+            except Exception as e:
+                logging.warning(f"Konnte Secret {secret_file} nicht lesen: {e}")
+    
+    # Check if we have the required secrets
+    if config.get("RUFNUMMER") and config.get("PASSWORT"):
+        return config
+    
+    return None
 
 
 config = load_config()
@@ -78,8 +150,16 @@ TELEGRAM_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 
 LAST_GB = 0.0
 
+# Set up data directory for Docker persistence
+DATA_DIR = os.getenv("DATA_DIR", "/app/data" if os.path.exists("/app/data") else ".")
+STATE_FILE = os.path.join(DATA_DIR, "state.json")
+COOKIE_FILE = os.path.join(DATA_DIR, "cookies.json")
+
+# Ensure data directory exists
+os.makedirs(DATA_DIR, exist_ok=True)
+
 try:
-    with open("state.json", "r") as f:
+    with open(STATE_FILE, "r") as f:
         data = json.load(f)
         if isinstance(data, dict) and "last_gb" in data:
             LAST_GB = float(data["last_gb"])
@@ -87,7 +167,7 @@ try:
             raise ValueError("Ungültiges Format in state.json - setze zurück.")
 except Exception as e:
     try:
-        with open("state.json", "w") as f:
+        with open(STATE_FILE, "w") as f:
             json.dump({"last_gb": 0.0}, f)
     except Exception as save_error:
         logging.error(f"Konnte 'state.json' nicht neu erstellen: {save_error}")
@@ -300,7 +380,7 @@ def login_and_check_data():
     with sync_playwright() as p:
         for attempt in range(3):  # 3 Versuche, falls Playwright abstürzt
             try:
-                COOKIE_FILE = "cookies.json"
+                COOKIE_FILE = os.path.join(DATA_DIR, "cookies.json")
                 logging.info(f"Starte {BROWSER}...")
                 LAUNCH_ARGS = get_launch_args(BROWSER)
 
@@ -392,7 +472,7 @@ def login_and_check_data():
                 LAST_GB = GB
 
                 try:
-                    with open("state.json", "w") as f:
+                    with open(STATE_FILE, "w") as f:
                         json.dump({"last_gb": LAST_GB}, f)
                 except Exception as e:
                     logging.warning(f"Fehler beim Speichern des GB-Werts: {e}")
