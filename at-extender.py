@@ -38,7 +38,7 @@ sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 LOGIN_URL = "https://login.alditalk-kundenbetreuung.de/signin/XUI/#login/"
 DASHBOARD_URL = "https://www.alditalk-kundenportal.de/portal/auth/uebersicht/"
 
-VERSION = "1.2.2"  # Deine aktuelle Version
+VERSION = "1.2.3"  # Deine aktuelle Version
 
 REMOTE_VERSION_URL = "https://raw.githubusercontent.com/Dinobeiser/AT-Extender/main/version.txt"  # Link zur Version
 REMOTE_SCRIPT_URL = "https://raw.githubusercontent.com/Dinobeiser/AT-Extender/main/at-extender.py"  # Link zum neuesten Skript
@@ -360,25 +360,16 @@ def login_and_check_data():
                     logging.info(" Bereits eingeloggt - Zugriff aufs Dashboard funktioniert.")
 
                     if not login_erfolgreich(page):
-                        logging.warning("Session scheint abgelaufen oder inkonsistent - versuche erneuten Login...")
+                        logging.warning("Session scheint abgelaufen oder fehlerhaft zu sein... versuche erneuten Login...")
 
                         if os.path.exists(COOKIE_FILE):
                             os.remove(COOKIE_FILE)
                             logging.info("Alte Cookies wurden gelöscht, da ungültig.")
 
-                        # Versuche Login erneut
-                        goto_and_handle_cookies(page, LOGIN_URL)
-
-                        logging.info("Fülle Login-Daten aus (Fallback)...")
-                        page.fill('#input-5', RUFNUMMER)
-                        page.fill('#input-6', PASSWORT)
-
-                        if not wait_and_click(page, '[class="button button--solid button--medium button--color-default button--has-label"]'):
-                            raise Exception("Fallback-Login: Login-Button konnte nicht geklickt werden.")
-
-                        logging.info("Warte auf Login... (Fallback)")
-                        time.sleep(8)
-
+                        browser.close()
+                        logging.info("Browser wird für Neuanlauf geschlossen.")
+                        time.sleep(3)
+                        return login_and_check_data()
 
                         if login_erfolgreich(page):
                             logging.info("Fallback-Login erfolgreich neue Cookies werden gespeichert.")
