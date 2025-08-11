@@ -1,11 +1,1 @@
-{
-  "RUFNUMMER": "DeineRufnummer",
-  "PASSWORT": "DeinPasswort",
-  "TELEGRAM": "0",
-  "BOT_TOKEN": "DeinTelegramBotToken",
-  "CHAT_ID": "DeineChatID",
-  "AUTO_UPDATE": "1",
-  "SLEEP_MODE": "random",
-  "SLEEP_INTERVAL": "70",
-  "BROWSER": "chromium"
-}
+edit
